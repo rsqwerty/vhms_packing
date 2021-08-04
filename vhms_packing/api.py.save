@@ -1,0 +1,312 @@
+import os
+import frappe
+import json
+import shutil
+from io import BytesIO
+
+import PIL
+import pdfkit
+import barcode
+import pandas as pd
+from PIL import Image, ImageDraw, ImageFont
+from barcode.writer import ImageWriter
+from PyPDF2 import PdfFileReader, PdfFileWriter
+
+from frappe.utils.background_jobs import enqueue
+
+def get_uom_details(item_code, uom):
+    values = frappe.db.sql(f"SELECT generate_ipuid,generate_puid  FROM `tabUOM Conversion Detail` WHERE uom='{uom}' AND parent=%s",item_code,as_dict=1)
+    return values[0]["generate_puid"], values[0]["generate_ipuid"]
+
+def create_ipuid(item, ipuid_nos, ipuid_conv, doctype):
+    serial_index = 0
+    ipuid_created = []
+    serial_nos = item.serial_no.split("\n")
+    for no in range(int(ipuid_nos)):
+        individual_list = []
+        serial_nos_in_ipuid = []
+        for index in range(int(ipuid_conv)):
+            associated_serial = {}
+            if serial_index < len(serial_nos):
+                associated_serial["associated_serial_no"] = serial_nos[serial_index]
+                serial_nos_in_ipuid.append(serial_nos[serial_index])
+                individual_list.append(associated_serial)
+                serial_index += 1
+        doc = frappe.get_doc({
+                             "doctype":"IPUID",
+                             "naming_series":frappe.get_value("UOM Conversion Detail", {"parent":item.item_code,"generate_ipuid":1},"ipuid_series"),
+                             "item_code":item.item_code,
+                             "reference_id":item.parent,
+                             "reference_doctype":doctype,
+                             "warehouse": item.warehouse,
+                             "associated_serial_no": individual_list,
+                             "opening_stock_qty":len(individual_list),
+                             "balance_serial_no": individual_list,
+                             "balance_stock_qty":len(individual_list),
+                             "opening_stock_uom":item.stock_uom,
+                             "balance_stock_uom":item.stock_uom,
+                             })
+        doc.insert()
+        frappe.db.commit()
+        ipuid_created.append({"doc":doc.name,"serial_nos":serial_nos_in_ipuid})
+    return ipuid_created
+
+def get_no_of_ipuid(item):
+    ipuid_conv = int(frappe.get_value("UOM Conversion Detail", {"parent":item.item_code, "generate_ipuid":1},"conversion_factor"))
+    return (int(item.conversion_factor)/ipuid_conv) * item.qty, ipuid_conv
+
+def create_puid(item, doctype):
+    ipuid_index = 0
+    ipuid_nos, ipuid_conv = get_no_of_ipuid(item)
+    created_ipuid_list = create_ipuid(item, ipuid_nos, ipuid_conv, doctype)
+    for no in range(int(item.qty)):
+        opening_ipuid = []
+        for ipuid in created_ipuid_list:
+            if ipuid_index < len(created_ipuid_list):
+                individual_ipuid = {}
+                individual_ipuid["associated_ipuid"] = created_ipuid_list[ipuid_index]["doc"]
+                individual_ipuid["associated_serial_no"] = json.dumps(created_ipuid_list[ipuid_index]["serial_nos"])
+                opening_ipuid.append(individual_ipuid)
+                ipuid_index += 1
+        doc = frappe.get_doc({
+                             "doctype":"PUID",
+                             "naming_series":frappe.get_value("UOM Conversion Detail", {"parent":item.item_code,"generate_puid":1},"puid_series"),
+                             "item_code":item.item_code,
+                             "reference_id":item.parent,
+                             "reference_doctype":doctype,
+                             "warehouse": item.warehouse,
+                             "opening_ipuid": opening_ipuid,
+                             "opening_i_qty": len(opening_ipuid),
+                             "balance_i_qty": len(opening_ipuid),
+                             "opening_stock_qty": int(item.qty) * int(item.conversion_factor),
+                             "balance_ipuid": opening_ipuid,
+                             "balance_stock_qty": int(item.qty) * int(item.conversion_factor),
+                             "opening_i_uom":frappe.get_value("UOM Conversion Detail", {"parent":item.item_code, "generate_ipuid":1},"uom"),
+                             "opening_stock_uom":item.stock_uom,
+                             "balance_i_uom":frappe.get_value("UOM Conversion Detail", {"parent":item.item_code, "generate_ipuid":1},"uom"),
+                             "balance_stock_uom":item.stock_uom,
+                             })
+        doc.insert()
+        frappe.db.commit()
+
+def get_packing_details(doctype,id,item_code):
+    ipuids_json = ""
+    puids_json = ""
+    ipuids = frappe.get_all("IPUID", {"item_code":item_code, "reference_doctype":doctype,"reference_id":id})
+    for ipuid in ipuids:
+       ipuids_json += ipuid["name"] + "\n"
+    puids = frappe.get_all("PUID", {"item_code":item_code, "reference_doctype":doctype,"reference_id":id})
+    for puid in puids:
+       puids_json += puid["name"] + "\n"
+    return ipuids_json, puids_json
+
+def update_docs(doc):
+    for item in doc.items:
+        ipuid, puid = get_packing_details(doc.doctype, doc.name, item.item_code)
+        item.puid = puid
+        item.ipuid = ipuid
+        sle_name = frappe.get_value("Stock Ledger Entry",{"voucher_type":doc.doctype,"voucher_no":doc.name,"voucher_detail_no":item.name,"item_code":item.item_code},"name")
+        sle_doc = frappe.get_doc("Stock Ledger Entry", sle_name)
+        sle_doc.puid = puid
+        sle_doc.ipuid = ipuid
+        sle_doc.save()
+    doc.save()
+    frappe.db.commit()
+
+    attach_barcode(doc)
+
+def create_packing_doctypes(name, doctype):
+    doc = frappe.get_doc(doctype, name)
+    for item in doc.items:
+        is_puid, is_ipuid = get_uom_details(item.item_code, item.uom)
+        if is_puid:
+            create_puid(item, doctype)
+        elif is_ipuid:
+            create_ipuid(item, item.qty, item.conversion_factor, doctype)
+        else:
+            continue
+
+    enqueue("vhms_packing.api.update_docs", doc=doc,timeout=99999)
+
+# BARCODE GENERATION
+
+def clean_up():
+    if os.path.exists('/tmp/barcodes_packing'):
+        shutil.rmtree("/tmp/barcodes_packing")
+    if os.path.exists('/tmp/barcode_sheets_packing'):
+        shutil.rmtree("/tmp/barcode_sheets_packing")
+    if os.path.exists('/tmp/barcode_pdf_packing'):
+        shutil.rmtree("/tmp/barcode_pdf_packing")
+
+def get_serial_no_values(packing_nos,name,doctype):
+    data = []
+    company = frappe.get_value(doctype,name,"company")
+    if company == "VideoHMS Agencies":
+        company = "VHMS"
+    elif company == "Modern Radio & Electricals":
+        company = "MR&E"
+    else:
+        company = ""
+    for item in packing_nos:
+        item_code = frappe.get_value("IPUID", item["name"], "item_code") or frappe.get_value("PUID", item["name"], "item_code")
+        if item_code and len(item_code) > 15:
+            item_code = item_code[0:14]
+
+        data.append({"sr_no":item["name"], "company":company, "item_code":item_code})
+    return data
+
+def get_data_for_attachment(name, doctype):
+    packing_nos = []
+    data = []
+    if doctype == "Purchase Receipt":
+        child_suffix = "Item"
+    else:
+        child_suffix = "Detail"
+    query = f"SELECT ipuid,puid FROM `tab{doctype} {child_suffix}` WHERE parent='{name}'"
+    data = frappe.db.sql(query, as_list=1)
+    if data:
+        for item in data:
+            for val in item:
+                d = val.split("\n")
+                for num in d:
+                    if num:
+                        packing_nos.append({'name':num})
+    data = get_serial_no_values(packing_nos,name,doctype)
+    return data
+
+def generate_single_barcode(data, file_count):
+    with open("/home/frappe/frappe-bench/apps/vhms/vhms/sans.ttf", "rb") as f:
+        font_bytes = BytesIO(f.read())
+    font = ImageFont.truetype(font_bytes, 16)
+    if not os.path.exists("/tmp/barcodes_packing"):
+        os.mkdir("/tmp/barcodes_packing")
+    for index, item in enumerate(data):
+        bar = None
+        bar = barcode.codex.Code128(item["sr_no"], writer=ImageWriter())
+        product_code = bar.render()
+        cropped = product_code.crop((0, 0, 425, 130))
+        final_image = Image.new("RGBA", (cropped.size[0], cropped.size[1] + 55), 'white')
+        final_image.paste(cropped, (0, 0))
+        draw = ImageDraw.Draw(final_image)
+        draw.text((150, 140), item["sr_no"], (0, 0, 0), font=font)
+        draw.text((115, 160), '{0}  {1}'.format(item["item_code"],item["company"]), (0, 0, 0), font=font)
+        final_image.save(f"/tmp/barcodes_packing/{index+1}.png", "PNG")
+    data_to_generate_sheets(file_count)
+
+def data_to_generate_sheets(file_count):
+    options = {
+        'page-size': 'A4',
+        'margin-top': '0in',
+        'margin-right': '0in',
+        'margin-bottom': '0in',
+        'margin-left': '0in',
+    }
+    pdfkit.from_file('/home/frappe/frappe-bench/apps/vhms_packing/vhms_packing/barcode_render.html', f'/tmp/barcode_sheets_packing/sheet{file_count}.pdf', options=options)
+    shutil.rmtree("/tmp/barcodes_packing")
+
+def generate_pdf(sheets_count, name):
+    os.mkdir("/tmp/barcode_pdf_packing")
+    pdfs = [f"/tmp/barcode_sheets_packing/sheet{no+1}.pdf" for no in range(sheets_count)]
+    output = "/tmp/barcode_pdf_packing/barcode_sheets.pdf"
+    pdf_writer = PdfFileWriter()
+
+    for pdf in pdfs:
+        pdf_reader = PdfFileReader(pdf)
+        pdf_writer.addPage(pdf_reader.getPage(0))
+
+    with open(output, 'wb') as out:
+        pdf_writer.write(out)
+    # Saving in site public files
+    public_file_location = f"/home/frappe/frappe-bench/sites/staging/public/files/{name}_packing.pdf"
+    with open(public_file_location, 'wb') as out:
+        pdf_writer.write(out)
+
+def generate_data(doc):
+    os.mkdir("/tmp/barcode_sheets_packing")
+    data = get_data_for_attachment(doc.name, doc.doctype)
+    serial_no = []
+    file_count = 0
+    for item in data:
+        if len(serial_no) == 40:
+            file_count += 1
+            generate_single_barcode(serial_no, file_count)
+            serial_no = []
+            serial_no.append(item)
+        else:
+            serial_no.append(item)
+    if len(serial_no) > 0:
+        file_count += 1
+        generate_single_barcode(serial_no, file_count)
+
+    generate_pdf(file_count, doc.name)
+
+def attach_barcode(doc):
+    clean_up()
+    generate_data(doc)
+    doc.packing_pdf = f"/files/{doc.name}_packing.pdf"
+    doc.save()
+    frappe.db.commit()
+    clean_up()
+
+# BARCODE GENERATION END
+
+def update_packing_units(doc):
+    for item in doc.items:
+        serial_nos = frappe.get_value(item.doctype,item.name,"serial_no").split("\n")
+        if len(serial_nos) == 1:
+            serial_nos.append("")
+        q = f"SELECT DISTINCT parent FROM `tabBalance Serial No` WHERE associated_serial_no in {tuple(serial_nos)}"
+        ipuids = frappe.db.sql(q, as_dict=1)
+        if not ipuids:
+            return True
+
+        for ipuid in ipuids:
+            count = 0
+            ipuid_doc = frappe.get_doc("IPUID", ipuid["parent"])
+            for child in ipuid_doc.balance_serial_no:
+                if child.associated_serial_no in serial_nos:
+                    child.delete()
+                    count += 1
+            ipuid_doc.balance_stock_qty = len(ipuid_doc.balance_serial_no) - count
+            ipuid_doc.save()
+        frappe.db.commit()
+
+        if len(ipuids) == 1:
+            ipuids.append({"parent":""})
+        ipuid_tuple = tuple(ipuid["parent"] for ipuid in ipuids)
+        q = f"SELECT DISTINCT parent FROM `tabBalance IPUID` WHERE associated_ipuid IN {ipuid_tuple}"
+        puids = frappe.db.sql(q, as_dict=1)
+        if not puids:
+            return True
+
+        for puid in puids:
+             serial_no_count = 0
+             ipuid_count = 0
+             puid_doc = frappe.get_doc("PUID", puid["parent"])
+             for child in puid_doc.balance_ipuid:
+                 if child.associated_ipuid in ipuid_tuple:
+                     puid_serial_nos = json.loads(child.associated_serial_no)
+                     for serial_no in puid_serial_nos.copy():
+                         if serial_no in serial_nos:
+                             serial_no_count += 1
+                             puid_serial_nos.remove(serial_no)
+                     if not puid_serial_nos:
+                         child.delete()
+                         ipuid_count += 1
+                     else:
+                         child.associated_serial_no = json.dumps(puid_serial_nos)
+             puid_doc.balance_i_qty = puid_doc.balance_i_qty - ipuid_count
+             puid_doc.balance_stock_qty = puid_doc.balance_stock_qty - serial_no_count
+             puid_doc.save()
+             frappe.db.commit()
+
+@frappe.whitelist()
+def get_serial_nos(serial_nos, ipuids):
+    serial_nos = serial_nos.split("\n")
+    ipuids = ipuids.split("\n")
+    for ipuid in ipuids:
+        associated_serial_nos = frappe.get_all("Balance Serial No",{"parent":ipuid},["associated_serial_no"])
+        for sr_no in associated_serial_nos:
+            if sr_no not in serial_nos:
+                serial_nos.append(sr_no)
+    return sr_no+"\n" for s

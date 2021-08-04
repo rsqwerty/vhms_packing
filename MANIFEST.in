@@ -1,0 +1,18 @@
+include MANIFEST.in
+include requirements.txt
+include *.json
+include *.md
+include *.py
+include *.txt
+recursive-include vhms_packing *.css
+recursive-include vhms_packing *.csv
+recursive-include vhms_packing *.html
+recursive-include vhms_packing *.ico
+recursive-include vhms_packing *.js
+recursive-include vhms_packing *.json
+recursive-include vhms_packing *.md
+recursive-include vhms_packing *.png
+recursive-include vhms_packing *.py
+recursive-include vhms_packing *.svg
+recursive-include vhms_packing *.txt
+recursive-exclude vhms_packing *.pyc

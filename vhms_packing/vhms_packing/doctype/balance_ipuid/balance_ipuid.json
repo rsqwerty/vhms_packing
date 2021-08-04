@@ -1,0 +1,38 @@
+{
+ "creation": "2021-04-29 13:11:12.865781",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "associated_ipuid",
+  "associated_serial_no"
+ ],
+ "fields": [
+  {
+   "fieldname": "associated_ipuid",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Associated IPUID",
+   "options": "IPUID",
+   "read_only": 1
+  },
+  {
+   "fieldname": "associated_serial_no",
+   "fieldtype": "Long Text",
+   "in_list_view": 1,
+   "label": "Associated Serial No",
+   "read_only": 1
+  }
+ ],
+ "istable": 1,
+ "modified": "2021-05-04 16:39:09.793368",
+ "modified_by": "Administrator",
+ "module": "Vhms Packing",
+ "name": "Balance IPUID",
+ "owner": "Administrator",
+ "permissions": [],
+ "quick_entry": 1,
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "track_changes": 1
+}

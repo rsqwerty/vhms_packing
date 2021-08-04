@@ -1,0 +1,62 @@
+{
+ "creation": "2021-06-16 16:54:08.446282",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "out_doctype",
+  "out_voucher_id",
+  "out_date",
+  "packing_doctype",
+  "out_packing_id",
+  "out_serial_no"
+ ],
+ "fields": [
+  {
+   "fieldname": "out_doctype",
+   "fieldtype": "Link",
+   "label": "Out Doctype",
+   "options": "DocType"
+  },
+  {
+   "fieldname": "out_voucher_id",
+   "fieldtype": "Dynamic Link",
+   "in_list_view": 1,
+   "label": "Out Voucher Id",
+   "options": "out_doctype"
+  },
+  {
+   "fieldname": "out_date",
+   "fieldtype": "Date",
+   "in_list_view": 1,
+   "label": "Out Date"
+  },
+  {
+   "fieldname": "out_packing_id",
+   "fieldtype": "Text",
+   "label": "Out Packing ID"
+  },
+  {
+   "fieldname": "out_serial_no",
+   "fieldtype": "Text",
+   "label": "Out Serial No"
+  },
+  {
+   "fieldname": "packing_doctype",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Packing Doctype"
+  }
+ ],
+ "istable": 1,
+ "modified": "2021-07-02 15:51:29.290356",
+ "modified_by": "Administrator",
+ "module": "Vhms Packing",
+ "name": "Out Details",
+ "owner": "Administrator",
+ "permissions": [],
+ "quick_entry": 1,
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "track_changes": 1
+}

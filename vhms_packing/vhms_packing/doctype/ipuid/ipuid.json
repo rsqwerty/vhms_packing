@@ -1,0 +1,154 @@
+{
+ "autoname": "naming_series:",
+ "creation": "2021-04-29 13:22:27.577539",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "naming_series",
+  "item_code",
+  "reference_doctype",
+  "reference_id",
+  "warehouse",
+  "associated_serial_no",
+  "section_break_5",
+  "opening_stock_qty",
+  "column_break_8",
+  "opening_stock_uom",
+  "section_break_11",
+  "balance_serial_no",
+  "section_break_13",
+  "balance_stock_qty",
+  "column_break_16",
+  "balance_stock_uom",
+  "delivery_details_section",
+  "out_details_table"
+ ],
+ "fields": [
+  {
+   "fieldname": "associated_serial_no",
+   "fieldtype": "Table",
+   "label": "Associated Serial No",
+   "options": "Opening Serial No",
+   "read_only": 1
+  },
+  {
+   "fieldname": "opening_stock_qty",
+   "fieldtype": "Float",
+   "label": "Opening Stock Qty",
+   "read_only": 1
+  },
+  {
+   "fieldname": "balance_serial_no",
+   "fieldtype": "Table",
+   "label": "Balance Serial No",
+   "options": "Balance Serial No",
+   "read_only": 1
+  },
+  {
+   "fieldname": "balance_stock_qty",
+   "fieldtype": "Float",
+   "label": "Balance Stock Qty",
+   "read_only": 1
+  },
+  {
+   "fieldname": "naming_series",
+   "fieldtype": "Data",
+   "label": "Naming Series"
+  },
+  {
+   "fieldname": "item_code",
+   "fieldtype": "Link",
+   "label": "Item Code",
+   "options": "Item",
+   "read_only": 1
+  },
+  {
+   "fieldname": "section_break_5",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "column_break_8",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "opening_stock_uom",
+   "fieldtype": "Data",
+   "label": "Opening Stock Uom",
+   "read_only": 1
+  },
+  {
+   "fieldname": "section_break_11",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "section_break_13",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "column_break_16",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "balance_stock_uom",
+   "fieldtype": "Data",
+   "label": "Balance Stock Uom",
+   "read_only": 1
+  },
+  {
+   "fieldname": "reference_doctype",
+   "fieldtype": "Link",
+   "label": "Reference Doctype",
+   "options": "DocType",
+   "read_only": 1
+  },
+  {
+   "fieldname": "reference_id",
+   "fieldtype": "Dynamic Link",
+   "label": "Reference ID",
+   "options": "reference_doctype",
+   "read_only": 1
+  },
+  {
+   "fieldname": "warehouse",
+   "fieldtype": "Link",
+   "label": "Warehouse",
+   "options": "Warehouse",
+   "read_only": 1
+  },
+  {
+   "fieldname": "delivery_details_section",
+   "fieldtype": "Section Break",
+   "label": "Out Details"
+  },
+  {
+   "fieldname": "out_details_table",
+   "fieldtype": "Table",
+   "label": "Out Details Table",
+   "options": "Out Details"
+  }
+ ],
+ "modified": "2021-06-16 16:55:28.423180",
+ "modified_by": "Administrator",
+ "module": "Vhms Packing",
+ "name": "IPUID",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "quick_entry": 1,
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "track_changes": 1
+}

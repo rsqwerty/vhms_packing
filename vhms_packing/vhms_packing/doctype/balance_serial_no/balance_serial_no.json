@@ -1,0 +1,29 @@
+{
+ "creation": "2021-04-29 13:16:54.134095",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "associated_serial_no"
+ ],
+ "fields": [
+  {
+   "fieldname": "associated_serial_no",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Associated Serial No",
+   "read_only": 1
+  }
+ ],
+ "istable": 1,
+ "modified": "2021-05-07 16:02:24.312035",
+ "modified_by": "Administrator",
+ "module": "Vhms Packing",
+ "name": "Balance Serial No",
+ "owner": "Administrator",
+ "permissions": [],
+ "quick_entry": 1,
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "track_changes": 1
+}

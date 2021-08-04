@@ -1,0 +1,182 @@
+{
+ "autoname": "naming_series:",
+ "creation": "2021-04-29 13:15:17.679411",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "naming_series",
+  "item_code",
+  "reference_doctype",
+  "reference_id",
+  "warehouse",
+  "opening_ipuid",
+  "section_break_5",
+  "opening_i_qty",
+  "opening_stock_qty",
+  "column_break_8",
+  "opening_i_uom",
+  "opening_stock_uom",
+  "section_break_8",
+  "balance_ipuid",
+  "section_break_10",
+  "balance_i_qty",
+  "balance_stock_qty",
+  "column_break_16",
+  "balance_i_uom",
+  "balance_stock_uom",
+  "delivery_details_section",
+  "out_details_table"
+ ],
+ "fields": [
+  {
+   "fieldname": "opening_ipuid",
+   "fieldtype": "Table",
+   "label": "Opening IPUID",
+   "options": "Opening IPUID",
+   "read_only": 1
+  },
+  {
+   "fieldname": "opening_i_qty",
+   "fieldtype": "Float",
+   "label": "Opening I Qty",
+   "read_only": 1
+  },
+  {
+   "fieldname": "opening_stock_qty",
+   "fieldtype": "Float",
+   "label": "Opening Stock Qty",
+   "read_only": 1
+  },
+  {
+   "fieldname": "balance_ipuid",
+   "fieldtype": "Table",
+   "label": "Balance IPUID",
+   "options": "Balance IPUID",
+   "read_only": 1
+  },
+  {
+   "fieldname": "balance_i_qty",
+   "fieldtype": "Float",
+   "label": "Balance I Qty",
+   "read_only": 1
+  },
+  {
+   "fieldname": "balance_stock_qty",
+   "fieldtype": "Float",
+   "label": "Balance Stock Qty",
+   "read_only": 1
+  },
+  {
+   "fieldname": "naming_series",
+   "fieldtype": "Data",
+   "label": "Naming Series"
+  },
+  {
+   "fieldname": "item_code",
+   "fieldtype": "Link",
+   "label": "Item Code",
+   "options": "Item",
+   "read_only": 1
+  },
+  {
+   "fieldname": "section_break_5",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "section_break_8",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "section_break_10",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "column_break_8",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "opening_i_uom",
+   "fieldtype": "Data",
+   "label": "Opening I Uom",
+   "read_only": 1
+  },
+  {
+   "fieldname": "opening_stock_uom",
+   "fieldtype": "Data",
+   "label": "Opening Stock Uom",
+   "read_only": 1
+  },
+  {
+   "fieldname": "balance_i_uom",
+   "fieldtype": "Data",
+   "label": "Balance I Uom",
+   "read_only": 1
+  },
+  {
+   "fieldname": "balance_stock_uom",
+   "fieldtype": "Data",
+   "label": "Balance Stock Uom",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_16",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "reference_doctype",
+   "fieldtype": "Link",
+   "label": "Reference Doctype",
+   "options": "DocType",
+   "read_only": 1
+  },
+  {
+   "fieldname": "reference_id",
+   "fieldtype": "Dynamic Link",
+   "label": "Reference ID",
+   "options": "reference_doctype",
+   "read_only": 1
+  },
+  {
+   "fieldname": "warehouse",
+   "fieldtype": "Link",
+   "label": "Warehouse",
+   "options": "Warehouse",
+   "read_only": 1
+  },
+  {
+   "fieldname": "delivery_details_section",
+   "fieldtype": "Section Break",
+   "label": "Out Details"
+  },
+  {
+   "fieldname": "out_details_table",
+   "fieldtype": "Table",
+   "label": "Out Details Table",
+   "options": "Out Details"
+  }
+ ],
+ "modified": "2021-06-16 16:55:08.409816",
+ "modified_by": "Administrator",
+ "module": "Vhms Packing",
+ "name": "PUID",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "quick_entry": 1,
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "track_changes": 1
+}
