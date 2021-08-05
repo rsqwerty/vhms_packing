@@ -5,7 +5,15 @@ from .api import create_packing_doctypes, update_packing_units, attach_xlsx
 from frappe.utils.background_jobs import enqueue
 #from vhms.api import attachment_barcode_sheet
 
+def check_if_valid_series(doc):
+    if not doc.has_serial_no:
+        return
+
+    if not doc.serial_no_series.isupper():
+        frappe.throw("Please Upper case the serial no series")
+
 def item_validate(doc, method):
+    check_if_valid_series(doc)
     ipuid_selected = 0
     puid_selected = 0
     for child in doc.uoms:
