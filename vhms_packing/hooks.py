@@ -26,6 +26,24 @@ def check_duplicates_custom(self):
 PickList.before_save = pick_list_before_save
 #ItemPrice.check_duplicates = check_duplicates_custom
 
+def before_submit_custom(self):
+        for item in self.locations:
+                if not frappe.get_cached_value('Item', item.item_code, 'has_serial_no'):
+                        continue
+                if not item.serial_no:
+                        if not frappe.get_value("Item",item.item_code,"has_serial_no"):
+                                continue
+                        else:
+                            frappe.throw(_("Row #{0}: {1} does not have any available serial numbers in {2}").format(
+                                frappe.bold(item.idx), frappe.bold(item.item_code), frappe.bold(item.warehouse)),
+                                title=_("Serial Nos Required"))
+                if len(item.serial_no.split('\n')) == item.picked_qty:
+                        continue
+                frappe.throw(_('For item {0} at row {1}, count of serial numbers does not match with the picked quantity')
+                        .format(frappe.bold(item.item_code), frappe.bold(item.idx)), title=_("Quantity Mismatch"))
+
+PickList.before_submit = before_submit_custom
+
 app_name = "vhms_packing"
 app_title = "Vhms Packing"
 app_publisher = "Fafadia Tech"

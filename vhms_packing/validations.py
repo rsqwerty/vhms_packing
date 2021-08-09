@@ -74,6 +74,8 @@ def validate_comment(doc):
     else:
         items = doc.items
     for item in items:
+        if not frappe.get_value("Item",item.item_code,"has_serial_no"):
+            continue
         serial_nos = item.serial_no.split("\n")
         if not item.suggested_serial_nos:
             continue

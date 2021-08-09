@@ -319,6 +319,8 @@ def is_all_ipuids(puid, ipuids):
 @frappe.whitelist()
 def ipuids_change(child):
     child = json.loads(child)
+    if not frappe.get_value("Item",child["item_code"],"has_serial_no"):
+        return
     updated_sr_no = set(child["serial_no"].split("\n")) if "serial_no" in child else set()
     updated_puids = set(child["selected_puids"].split("\n")) if "selected_puids" in child else set()
     before_saved_ipuids = frappe.get_value(child["doctype"], child["name"],"selected_ipuids") or ""
@@ -331,7 +333,7 @@ def ipuids_change(child):
             for sr_no in associated_serial_nos:
                 updated_sr_no.add(sr_no["associated_serial_no"])
             associated_puid = frappe.get_value("Balance IPUID",{"associated_ipuid":ipuid},"parent")
-            if not associated_puid and (associated_puid in updated_puids):
+            if not associated_puid or (associated_puid in updated_puids):
                 continue
 
             if is_all_ipuids(associated_puid, child["selected_ipuids"].split("\n")):
@@ -366,6 +368,8 @@ def accept_values(doc_name,child_name):
 @frappe.whitelist()
 def serial_no_change(child):
     child = json.loads(child)
+    if not frappe.get_value("Item",child["item_code"],"has_serial_no"):
+        return
     ipuids = []
     puids = []
     serial_nos = child["serial_no"].split("\n") if "serial_no" in child else []
@@ -392,6 +396,8 @@ def serial_no_change(child):
 @frappe.whitelist()
 def puids_change(child):
     child = json.loads(child)
+    if not frappe.get_value("Item",child["item_code"],"has_serial_no"):
+        return
     updated_sr_no = set(child["serial_no"].split("\n")) if "serial_no" in child else set()
     updated_ipuids = set(child["selected_ipuids"].split("\n")) if "selected_ipuids" in child else set()
     before_saved_puids = frappe.get_value(child["doctype"], child["name"],"selected_puids") or ""
